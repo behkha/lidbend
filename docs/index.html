@@ -321,6 +321,7 @@
       </a>
     </div>
     <p class="note">No account, no license key, no telemetry. If it makes you smile, <a href="#donate">send a coin</a>.</p>
+    <p class="note">Not notarized, so macOS blocks the first launch. Allow it once under System Settings › Privacy &amp; Security › Open Anyway.</p>
   </div>
 
   <figure class="figure">
@@ -379,6 +380,7 @@
         <div class="row"><dt>macOS</dt><dd>14 Sonoma or later.</dd></div>
         <div class="row"><dt>Hardware</dt><dd>Apple silicon MacBook with a lid angle sensor. Other Macs get a manual angle slider.</dd></div>
         <div class="row"><dt>Permissions</dt><dd>Screen Recording, so the desktop can be captured. Asked once, from a button, never on launch.</dd></div>
+        <div class="row"><dt>Install</dt><dd>Unzip, drag to Applications, open. There is no Apple developer account behind Lidbend, so the first launch is blocked: System Settings › Privacy &amp; Security › Open Anyway. Or clear the quarantine flag: <code>xattr -dr com.apple.quarantine /Applications/Lidbend.app</code></dd></div>
       </dl>
     </section>
 

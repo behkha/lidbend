@@ -36,6 +36,19 @@ maintained:
 - Swift toolchain (Xcode or the Command Line Tools — the shaders are compiled at
   runtime, so the offline `metal` compiler is not needed)
 
+## Install
+
+Grab `Lidbend-x.y.zip` from the [latest release](https://github.com/behkha/lidbend/releases/latest),
+unzip it and drag `Lidbend.app` to Applications.
+
+The app is ad-hoc signed and not notarized, so macOS blocks the first launch.
+Open it once, dismiss the warning, then go to System Settings › Privacy &
+Security and choose **Open Anyway**. Or clear the quarantine flag instead:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Lidbend.app
+```
+
 ## Build and run
 
 ```bash
@@ -43,7 +56,11 @@ maintained:
 ```
 
 That produces `dist/Lidbend.app` and launches it. `./build.sh --debug` builds the
-debug configuration instead.
+debug configuration instead, and `./build.sh --package` zips the app into
+`dist/Lidbend-<version>.zip` for a release.
+
+Releases are built by GitHub Actions: push a `v*` tag and
+`.github/workflows/release.yml` builds, packages and publishes it.
 
 ## Screen Recording permission
 

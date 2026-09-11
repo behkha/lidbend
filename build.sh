@@ -4,12 +4,14 @@
 #   ./build.sh            release build into ./dist/Lidbend.app
 #   ./build.sh --debug    debug build
 #   ./build.sh --run      build, then relaunch the app
+#   ./build.sh --package  build, then zip the app for a GitHub release
 
 set -euo pipefail
 cd "$(dirname "$0")"
 
 CONFIG=release
 RUN=0
+PACKAGE=0
 SETUP_SIGNING=0
 SIGN_ID="Lidbend Local"
 
@@ -17,6 +19,7 @@ for arg in "$@"; do
     case "$arg" in
         --debug) CONFIG=debug ;;
         --run)   RUN=1 ;;
+        --package) PACKAGE=1 ;;
         --setup-signing) SETUP_SIGNING=1 ;;
         *) echo "unknown option: $arg" >&2; exit 1 ;;
     esac
@@ -115,6 +118,16 @@ else
 fi
 
 echo "==> built $APP"
+
+# ditto keeps the code signature and resource forks intact, which a plain zip
+# does not; the archive unpacks to a working app on another Mac.
+if [ "$PACKAGE" = "1" ]; then
+    VERSION="$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' Resources/Info.plist)"
+    ZIP="dist/Lidbend-$VERSION.zip"
+    rm -f "$ZIP"
+    ditto -c -k --keepParent "$APP" "$ZIP"
+    echo "==> packaged $ZIP"
+fi
 
 if [ "$RUN" = "1" ]; then
     pkill -x Lidbend 2>/dev/null || true
