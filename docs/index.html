@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lidbend</title>
+<meta name="description" content="Lidbend bends your live desktop as you close the MacBook lid. The iPhone Duo fold, for the lid you already have. Free and open source.">
+<meta property="og:title" content="Lidbend">
+<meta property="og:description" content="Your desktop bends as you close the lid. Free, open source, driven by the MacBook's own hinge sensor.">
+<meta property="og:image" content="settings.png">
+<meta name="theme-color" content="#f4f4f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121214" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Crect width='20' height='20' rx='5' fill='%23111'/%3E%3Cpath d='M4 14.5 7.2 6.4c.2-.4.6-.7 1-.7h5.6c.6 0 1 .6.8 1.2L12 14.5' stroke='%23fff' stroke-width='1.5' stroke-linejoin='round'/%3E%3Cpath d='M4 14.5h12' stroke='%23fff' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #f4f4f5;
+    --card: #ffffff;
+    --ink: #111113;
+    --muted: #6b6b72;
+    --line: #ececee;
+    --soft: #f0f0f2;
+    --btc: #f7931a;
+    --eth: #627eea;
+    --bezel: #121212;
+    --deck: #858585;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121214;
+      --card: #1b1b1f;
+      --ink: #f2f2f4;
+      --muted: #9a9aa3;
+      --line: #2b2b31;
+      --soft: #232328;
+      --deck: #6d6d72;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #121214;
+    --card: #1b1b1f;
+    --ink: #f2f2f4;
+    --muted: #9a9aa3;
+    --line: #2b2b31;
+    --soft: #232328;
+    --deck: #6d6d72;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  html.lenis, html.lenis body { height: auto; }
+  .lenis.lenis-smooth { scroll-behavior: auto !important; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, system-ui, sans-serif;
+    font-feature-settings: "cv11", "ss01";
+    font-weight: 500;
+    font-size: 15px;
+    line-height: 1.5;
+    letter-spacing: -0.011em;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 4px; }
+
+  .stage { max-width: 640px; margin: 0 auto; padding: 128px 24px 64px; }
+
+  /* ------------------------------------------------------------ top bar */
+  .topbar { position: absolute; left: 32px; top: 28px; }
+  .brand { display: inline-flex; align-items: center; gap: 12px; }
+  .brand .os { color: var(--muted); font-size: 13px; }
+  .wordmark {
+    display: inline-flex; align-items: center; gap: 6px;
+    text-decoration: none; letter-spacing: -0.02em;
+  }
+  .wordmark svg { width: 20px; height: 20px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 28px; padding: 0 12px;
+    border-radius: 999px; background: var(--card);
+    text-decoration: none; font-size: 13px; letter-spacing: -0.01em;
+    transition: transform .15s ease;
+  }
+  .pill:hover { transform: translateY(-1px); }
+  .pill:active { transform: scale(.98); }
+  .topbar .pill { margin-left: 4px; }
+  .github-pill { position: fixed; top: 28px; right: 32px; z-index: 20; }
+  .github-pill .stars { font-variant-numeric: tabular-nums; }
+  .github-pill svg { width: 14px; height: 14px; }
+  @media (max-width: 900px) { .github-pill { top: auto; bottom: 16px; right: 16px; } }
+
+  /* ------------------------------------------------------------ intro */
+  .intro { margin-bottom: 32px; }
+  h1 {
+    text-wrap: balance;
+    font-size: 40px; line-height: 1.1; letter-spacing: -0.035em; font-weight: 500;
+    margin: 0 0 16px;
+  }
+  .lede { font-size: 19px; line-height: 1.4; letter-spacing: -0.02em; color: var(--muted); margin: 0; max-width: 34ch; }
+
+  .actions { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; margin-bottom: 80px; }
+  .action-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .button {
+    display: inline-flex; align-items: center; gap: 10px;
+    height: 40px; padding: 0 6px 0 18px;
+    border-radius: 999px; background: var(--ink); color: var(--bg);
+    text-decoration: none; letter-spacing: -0.015em; white-space: nowrap;
+    transition: transform .15s ease, opacity .15s ease;
+  }
+  .button .tag {
+    display: inline-flex; align-items: center; height: 28px; padding: 0 10px;
+    border-radius: 999px; background: color-mix(in srgb, var(--bg) 16%, transparent);
+    font-size: 13px; letter-spacing: -0.01em;
+  }
+  .button:hover { opacity: .88; }
+  .button:active { transform: scale(.98); }
+  .ghost {
+    display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px;
+    border-radius: 999px; background: var(--card); text-decoration: none; white-space: nowrap;
+    transition: transform .15s ease;
+  }
+  .ghost:hover { transform: translateY(-1px); }
+  .ghost svg { width: 16px; height: 16px; }
+  .note { margin: 0; color: var(--muted); font-size: 13px; letter-spacing: -0.005em; }
+  .note a { text-decoration: none; border-bottom: 1px solid var(--line); }
+  .note a:hover { border-color: var(--ink); }
+
+  /* ------------------------------------------------------------ figures */
+  .figure {
+    width: min(880px, calc(100vw - 48px));
+    margin: 0 0 56px 50%;
+    transform: translateX(-50%);
+    padding: 0;
+  }
+  .caption {
+    margin: 20px auto 0; max-width: 44ch; text-wrap: balance; text-align: center;
+    color: var(--muted); font-size: 13px; letter-spacing: -0.005em;
+  }
+  .shot { margin: 0 0 56px; padding: 0; }
+  .shot img {
+    display: block; width: min(643px, 100%); height: auto; margin: 0 auto;
+    filter: drop-shadow(0 24px 48px rgba(0,0,0,.14)) drop-shadow(0 2px 6px rgba(0,0,0,.08));
+  }
+
+  /* MacBook. Container units keep bezel, notch and deck in proportion at any width. */
+  .mac { width: 100%; max-width: 880px; margin: 0 auto; container-type: inline-size; }
+  .lid {
+    position: relative; margin: 0 3.81cqw; aspect-ratio: 1.54;
+    background: var(--bezel); border-radius: 4.83cqw 4.83cqw 0 0; overflow: hidden;
+  }
+  .screen {
+    position: absolute; inset: 1.5cqw 1.5cqw 2.2cqw;
+    border-radius: 3.4cqw 3.4cqw 0 0; overflow: hidden;
+    transform-origin: 50% 100%; will-change: transform;
+    background: #4c5a70;
+  }
+  .layer { position: absolute; inset: 0; }
+  .layer svg { display: block; width: 100%; height: 100%; }
+  /* Progressive blur: each soft copy is blurred harder and masked to a shorter
+     band from the top, so sharpness falls away smoothly toward the far edge. */
+  .layer.soft { opacity: 0; transform: scale(1.03); }
+  .layer.soft-1 { filter: blur(6px);  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 30%, transparent 75%); mask-image: linear-gradient(to bottom, #000 0%, #000 30%, transparent 75%); }
+  .layer.soft-2 { filter: blur(16px); -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 15%, transparent 52%); mask-image: linear-gradient(to bottom, #000 0%, #000 15%, transparent 52%); }
+  .layer.soft-3 { filter: blur(36px); -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 6%, transparent 34%);  mask-image: linear-gradient(to bottom, #000 0%, #000 6%, transparent 34%); }
+  .shade {
+    position: absolute; inset: 0; opacity: 0;
+    background:
+      radial-gradient(120% 60% at 0% 0%, rgba(0,0,0,.55), transparent 60%),
+      radial-gradient(120% 60% at 100% 0%, rgba(0,0,0,.55), transparent 60%),
+      linear-gradient(to bottom, rgba(0,0,0,.35), transparent 45%);
+  }
+  .home {
+    position: absolute; left: 50%; bottom: 3.45cqw; width: 20%; height: 1.03cqw;
+    transform: translateX(-50%); border-radius: 1cqw; background: rgba(255,255,255,.7);
+  }
+  .notch {
+    position: absolute; top: 1.5cqw; left: 50%; width: 22.06cqw; aspect-ratio: 64 / 9;
+    transform: translateX(-50%); color: var(--bezel);
+  }
+  .notch svg { display: block; width: 100%; height: 100%; }
+  .deck { position: relative; height: 3.1cqw; background: var(--deck); border-radius: 0 0 1.03cqw 1.03cqw; }
+  .lip {
+    position: absolute; top: 0; left: 50%; width: 24.8cqw; height: 1.21cqw;
+    transform: translateX(-50%); border-radius: 0 0 1.38cqw 1.38cqw; background: rgba(0,0,0,.35);
+  }
+
+  /* ------------------------------------------------------------ cards */
+  .stack { display: flex; flex-direction: column; gap: 16px; }
+  .card { background: var(--card); border-radius: 20px; padding: 24px 24px 12px; }
+  h2 {
+    font-size: 13px; font-weight: 500; letter-spacing: 0.02em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 8px;
+  }
+  dl { margin: 0 -24px; padding: 0; }
+  .row {
+    display: grid; grid-template-columns: 140px 1fr; gap: 16px;
+    padding: 16px 24px; border-bottom: 1px solid var(--line);
+  }
+  .row:last-child { border-bottom: 0; }
+  dt { margin: 0; letter-spacing: -0.015em; }
+  dd { margin: 0; color: var(--muted); }
+  dd code, .cmd {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.5px; letter-spacing: 0;
+  }
+  dd code { background: var(--soft); padding: 2px 6px; border-radius: 6px; color: var(--ink); }
+
+  /* ------------------------------------------------------------ donate */
+  .donate { padding-bottom: 24px; }
+  .donate-lede { margin: 0 0 20px; color: var(--muted); max-width: 46ch; }
+  .coins { display: flex; flex-direction: column; gap: 12px; }
+  .coin {
+    display: grid; grid-template-columns: 1fr auto; gap: 16px 20px; align-items: start;
+    padding: 16px; border-radius: 14px; background: var(--soft);
+  }
+  .coin-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .coin-name { flex: 1; min-width: 0; }
+  .coin-name span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .copy { flex-shrink: 0; }
+  .mark {
+    flex-shrink: 0; width: 30px; height: 30px; border-radius: 9px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 600; font-size: 15px;
+  }
+  .mark.btc { background: var(--btc); }
+  .mark.eth { background: var(--eth); }
+  .coin-name { display: flex; flex-direction: column; line-height: 1.25; }
+  .coin-name strong { font-weight: 600; }
+  .coin-name span { color: var(--muted); font-size: 12.5px; }
+  .copy {
+    margin-left: auto; height: 28px; padding: 0 12px; border-radius: 999px;
+    border: 0; background: var(--card); color: var(--ink); font: inherit; font-size: 13px;
+    cursor: pointer; transition: transform .15s ease, background .2s ease;
+  }
+  .copy:hover { transform: translateY(-1px); }
+  .copy:active { transform: scale(.98); }
+  .copy.done { background: var(--ink); color: var(--bg); }
+  .addr {
+    grid-column: 1; display: block; margin: 0;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.5px; letter-spacing: 0; line-height: 1.6;
+    word-break: break-all; user-select: all; color: var(--ink);
+  }
+  .qr {
+    grid-column: 2; grid-row: 1 / 3;
+    width: 112px; height: 112px; padding: 8px; border-radius: 10px; background: #fff;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .qr img, .qr canvas { display: block; width: 96px !important; height: 96px !important; image-rendering: pixelated; }
+  .qr:empty { display: none; }
+  .donate-note { margin: 16px 0 0; color: var(--muted); font-size: 13px; }
+
+  /* ------------------------------------------------------------ footer */
+  footer {
+    display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    color: var(--muted); font-size: 13px; margin-top: 48px; padding-top: 24px;
+    border-top: 1px solid var(--line);
+  }
+  footer a { text-decoration: none; }
+  footer .links { display: flex; gap: 20px; }
+  footer a:hover { color: var(--ink); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .screen { transform: none !important; }
+    .layer.soft, .shade { opacity: 0 !important; }
+    .pill, .button, .ghost, .copy { transition: none; }
+  }
+  @media (max-width: 520px) {
+    .topbar { left: 24px; top: 24px; }
+    .brand { flex-wrap: wrap; gap: 8px 12px; }
+    .topbar .pill { margin-left: 0; }
+    .stage { padding-top: 96px; }
+    h1 { font-size: 32px; }
+    .lede { font-size: 17px; }
+    .row { grid-template-columns: 1fr; gap: 4px; }
+    .coin { grid-template-columns: 1fr; }
+    .qr { grid-column: 1; grid-row: auto; }
+    .addr { grid-column: 1; }
+  }
+</style>
+</head>
+<body>
+<main class="stage">
+  <a class="pill github-pill" id="githubPill" href="https://github.com/behkha/lidbend" aria-label="Lidbend on GitHub">
+    <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 .2a8 8 0 0 0-2.5 15.6c.4.1.5-.2.5-.4v-1.5c-2.2.5-2.7-1-2.7-1-.4-.9-.9-1.2-.9-1.2-.7-.5.1-.5.1-.5.8.1 1.2.8 1.2.8.7 1.3 1.9.9 2.4.7.1-.5.3-.9.5-1.1-1.8-.2-3.7-.9-3.7-4 0-.9.3-1.6.8-2.1-.1-.2-.4-1 .1-2.1 0 0 .7-.2 2.2.8a7.6 7.6 0 0 1 4 0c1.5-1 2.2-.8 2.2-.8.4 1.1.2 1.9.1 2.1.5.6.8 1.3.8 2.1 0 3.1-1.9 3.8-3.7 4 .3.3.6.8.6 1.5v2.2c0 .2.1.5.6.4A8 8 0 0 0 8 .2Z"/></svg>
+    <span class="stars" id="stars">Star on GitHub</span>
+  </a>
+
+  <div class="topbar">
+    <div class="brand">
+      <a class="wordmark" href="./">
+        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M2.5 15.5 6.2 5.9c.2-.4.6-.7 1-.7h6.9c.6 0 1 .6.8 1.2L11 15.5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M2.5 15.5h15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        Lidbend
+      </a>
+      <span class="os">macOS</span>
+      <a class="pill" href="#donate">Free &amp; open source<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 6h7M6.5 3 9.5 6l-3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+    </div>
+  </div>
+
+  <div class="intro">
+    <h1>Your desktop bends as you close the lid.</h1>
+    <p class="lede">The fluid fold from iPhone Duo, for the lid you already have. Your desktop tilts, blurs and settles as it comes down.</p>
+  </div>
+
+  <div class="actions">
+    <div class="action-row">
+      <a class="button" href="https://github.com/behkha/lidbend/releases/latest">
+        Download for macOS
+        <span class="tag">Free</span>
+      </a>
+      <a class="ghost" href="https://github.com/behkha/lidbend">
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 .2a8 8 0 0 0-2.5 15.6c.4.1.5-.2.5-.4v-1.5c-2.2.5-2.7-1-2.7-1-.4-.9-.9-1.2-.9-1.2-.7-.5.1-.5.1-.5.8.1 1.2.8 1.2.8.7 1.3 1.9.9 2.4.7.1-.5.3-.9.5-1.1-1.8-.2-3.7-.9-3.7-4 0-.9.3-1.6.8-2.1-.1-.2-.4-1 .1-2.1 0 0 .7-.2 2.2.8a7.6 7.6 0 0 1 4 0c1.5-1 2.2-.8 2.2-.8.4 1.1.2 1.9.1 2.1.5.6.8 1.3.8 2.1 0 3.1-1.9 3.8-3.7 4 .3.3.6.8.6 1.5v2.2c0 .2.1.5.6.4A8 8 0 0 0 8 .2Z"/></svg>
+        View the source
+      </a>
+    </div>
+    <p class="note">No account, no license key, no telemetry. If it makes you smile, <a href="#donate">send a coin</a>.</p>
+  </div>
+
+  <figure class="figure">
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <defs>
+        <symbol id="scene" viewBox="0 0 280 182" preserveAspectRatio="none">
+          <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4c5a70"/><stop offset="1" stop-color="#c2cbd8"/></linearGradient>
+          <linearGradient id="far" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0e5ec"/><stop offset="1" stop-color="#85919f"/></linearGradient>
+          <linearGradient id="near" x1="0" y1="0" x2=".5" y2="1"><stop offset="0" stop-color="#ccd4de"/><stop offset="1" stop-color="#75879a"/></linearGradient>
+          <rect width="280" height="182" fill="url(#sky)"/>
+          <circle cx="213" cy="49" r="11" fill="#eff5ff" fill-opacity=".85"/>
+          <path d="M0 118C36 130 96 104 158 112S244 100 280 94V182H0Z" fill="url(#far)"/>
+          <path d="M0 134C44 112 104 116 152 140S228 158 280 150V182H0Z" fill="url(#near)"/>
+          <text x="140" y="27" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, Inter, system-ui, sans-serif" font-size="6.4" font-weight="500" fill="#fff" fill-opacity=".85">Friday, September 11</text>
+          <text x="140" y="60" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, Inter, system-ui, sans-serif" font-size="36" font-weight="500" letter-spacing="-1.4" fill="#fff" fill-opacity=".9">9:41</text>
+        </symbol>
+      </defs>
+    </svg>
+    <div class="mac">
+      <div class="lid">
+        <div class="screen" id="screen">
+          <div class="layer sharp"><svg preserveAspectRatio="none" aria-hidden="true"><use href="#scene"/></svg></div>
+          <div class="layer soft soft-1"><svg preserveAspectRatio="none" aria-hidden="true"><use href="#scene"/></svg></div>
+          <div class="layer soft soft-2"><svg preserveAspectRatio="none" aria-hidden="true"><use href="#scene"/></svg></div>
+          <div class="layer soft soft-3"><svg preserveAspectRatio="none" aria-hidden="true"><use href="#scene"/></svg></div>
+          <div class="shade" id="shade"></div>
+          <div class="home"></div>
+        </div>
+        <div class="notch"><svg viewBox="0 0 64 9" preserveAspectRatio="none"><path d="M0 0Q2 0 2 2V5Q2 9 6 9H58Q62 9 62 5V2Q62 0 64 0Z" fill="currentColor"/></svg></div>
+      </div>
+      <div class="deck"><div class="lip"></div></div>
+    </div>
+    <figcaption class="caption">Scroll. The screen bends, blurs and shades, just like when your lid comes down.</figcaption>
+  </figure>
+
+  <figure class="shot">
+    <img src="settings.png" width="1286" height="1234" alt="Lidbend's Appearance settings: a live MacBook preview, a lid angle slider with a Follow lid switch, Silk, Shade and Frost style cards, and perspective, blur and shadow sliders." loading="lazy">
+    <figcaption class="caption">Three styles. Perspective, blur and shadow on sliders. Follow the lid, or drag the angle yourself.</figcaption>
+  </figure>
+
+  <div class="stack">
+    <section class="card">
+      <h2>How it works</h2>
+      <dl>
+        <div class="row"><dt>Lid sensor</dt><dd>Reads the hinge angle from the Mac's own sensor over HID. No polling tricks, no accessibility hacks.</dd></div>
+        <div class="row"><dt>Live desktop</dt><dd>Captures the screen with ScreenCaptureKit and renders the tilt in Metal, so windows and wallpaper move together.</dd></div>
+        <div class="row"><dt>Three styles</dt><dd>Silk, Shade and Frost. Tune perspective, blur and shadow, or set the angle where it clears.</dd></div>
+        <div class="row"><dt>Sound</dt><dd>A soft click when the lid opens and the desktop clears. Switch it off in General if you'd rather not.</dd></div>
+        <div class="row"><dt>Menu bar</dt><dd>Lives quietly in the menu bar. Pause with a click.</dd></div>
+      </dl>
+    </section>
+
+    <section class="card">
+      <h2>Requirements</h2>
+      <dl>
+        <div class="row"><dt>macOS</dt><dd>14 Sonoma or later.</dd></div>
+        <div class="row"><dt>Hardware</dt><dd>Apple silicon MacBook with a lid angle sensor. Other Macs get a manual angle slider.</dd></div>
+        <div class="row"><dt>Permissions</dt><dd>Screen Recording, so the desktop can be captured. Asked once, from a button, never on launch.</dd></div>
+      </dl>
+    </section>
+
+    <section class="card">
+      <h2>Free and open source</h2>
+      <dl>
+        <div class="row"><dt>On device</dt><dd>Frames are processed on your Mac. Nothing is recorded, saved or uploaded.</dd></div>
+        <div class="row"><dt>No account</dt><dd>Download, drag to Applications, done. No license key, no sign-in, no telemetry.</dd></div>
+        <div class="row"><dt>Build it yourself</dt><dd>Swift package, no Xcode project. <code>git clone https://github.com/behkha/lidbend</code> then <code>./build.sh --run</code>.</dd></div>
+      </dl>
+    </section>
+
+    <section class="card donate" id="donate">
+      <h2>Support the project</h2>
+      <p class="donate-lede">Lidbend is free and stays free. If it made you smile, a coin keeps the hinge oiled. Scan or copy; the address is all there is.</p>
+      <div class="coins">
+        <div class="coin">
+          <div class="coin-head">
+            <span class="mark btc" aria-hidden="true">₿</span>
+            <div class="coin-name"><strong>Bitcoin</strong><span>BTC · native SegWit</span></div>
+            <button class="copy" type="button" data-copy="bc1qy46kag7z0muc4xjptq4x07m53qmqyczwpsm59t">Copy</button>
+          </div>
+          <code class="addr">bc1qy46kag7z0muc4xjptq4x07m53qmqyczwpsm59t</code>
+          <div class="qr" data-qr="bc1qy46kag7z0muc4xjptq4x07m53qmqyczwpsm59t" aria-label="QR code of the Bitcoin address"></div>
+        </div>
+        <div class="coin">
+          <div class="coin-head">
+            <span class="mark eth" aria-hidden="true">Ξ</span>
+            <div class="coin-name"><strong>Ethereum</strong><span>ETH · mainnet, ERC-20 welcome</span></div>
+            <button class="copy" type="button" data-copy="0x9972519894861132cbc98D869C174E2235D165c2">Copy</button>
+          </div>
+          <code class="addr">0x9972519894861132cbc98D869C174E2235D165c2</code>
+          <div class="qr" data-qr="0x9972519894861132cbc98D869C174E2235D165c2" aria-label="QR code of the Ethereum address"></div>
+        </div>
+      </div>
+      <p class="donate-note">Prefer to help another way? Bugs and pull requests on GitHub are just as welcome.</p>
+    </section>
+  </div>
+
+  <footer>
+    <span>© <span id="year">2026</span> Lidbend</span>
+    <nav class="links">
+      <a href="https://github.com/behkha/lidbend">GitHub</a>
+      <a href="https://github.com/behkha/lidbend/releases">Releases</a>
+      <a href="https://github.com/behkha/lidbend/issues">Issues</a>
+      <a href="#donate">Donate</a>
+    </nav>
+  </footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // Scroll drives the same lid effect the app renders: the screen keeps its
+  // base anchored, leans away at the top, and gains blur and shade up there.
+  // Lenis smooths the scroll; a lerp smooths the effect on top of it.
+  (function () {
+    var screen = document.getElementById('screen');
+    var soft = screen.querySelectorAll('.layer.soft');
+    var shade = document.getElementById('shade');
+    var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var TRAVEL = 900, MAX_TILT = 72;
+    var target = 0, shown = 0, lenis = null;
+
+    function ease(t) { return t * t * (3 - 2 * t); }
+    function fromScroll(y) { return ease(Math.min(Math.max(y / TRAVEL, 0), 1)); }
+
+    function paint(p) {
+      screen.style.transform = 'perspective(1400px) rotateX(' + (p * MAX_TILT).toFixed(2) + 'deg)';
+      for (var i = 0; i < soft.length; i++) soft[i].style.opacity = p.toFixed(3);
+      shade.style.opacity = (p * 0.9).toFixed(3);
+      // Feather the top edge over a band that grows with the bend, so the
+      // silhouette softens along with the pixels while the base stays sharp.
+      var band = p * 22;
+      var mask = 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,.25) ' + (band * .25).toFixed(2) +
+                 '%, rgba(0,0,0,.65) ' + (band * .55).toFixed(2) + '%, #000 ' + band.toFixed(2) + '%)';
+      screen.style.webkitMaskImage = mask;
+      screen.style.maskImage = mask;
+    }
+    function frame(time) {
+      if (lenis) lenis.raf(time);
+      if (reduced) {
+        shown = target;
+      } else {
+        shown += (target - shown) * 0.08;
+        if (Math.abs(target - shown) < 0.0005) shown = target;
+      }
+      paint(shown);
+      requestAnimationFrame(frame);
+    }
+    function start() {
+      if (window.Lenis && !reduced) {
+        lenis = new Lenis({ lerp: 0.09, wheelMultiplier: 0.9 });
+        lenis.on('scroll', function (e) { target = fromScroll(e.scroll); });
+      } else {
+        addEventListener('scroll', function () { target = fromScroll(window.scrollY); }, { passive: true });
+      }
+      shown = target = fromScroll(window.scrollY);
+      paint(shown);
+      requestAnimationFrame(frame);
+    }
+    if (document.readyState === 'complete') start(); else addEventListener('load', start);
+  })();
+
+  // Copy buttons for the wallet addresses.
+  (function () {
+    var buttons = document.querySelectorAll('.copy');
+    for (var i = 0; i < buttons.length; i++) {
+      buttons[i].addEventListener('click', function () {
+        var button = this, text = button.getAttribute('data-copy');
+        var done = function () {
+          button.textContent = 'Copied';
+          button.classList.add('done');
+          setTimeout(function () { button.textContent = 'Copy'; button.classList.remove('done'); }, 1600);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done, function () { fallback(text, done); });
+        } else {
+          fallback(text, done);
+        }
+      });
+    }
+    function fallback(text, done) {
+      var area = document.createElement('textarea');
+      area.value = text; area.setAttribute('readonly', '');
+      area.style.position = 'fixed'; area.style.opacity = '0';
+      document.body.appendChild(area); area.select();
+      try { document.execCommand('copy'); done(); } catch (e) {}
+      document.body.removeChild(area);
+    }
+  })();
+
+  // QR codes carry the bare address, byte for byte what the text shows, so a
+  // donor can check one against the other. Skipped quietly if the library
+  // did not load; the address still stands.
+  (function () {
+    var tiles = document.querySelectorAll('.qr');
+    for (var i = 0; i < tiles.length; i++) {
+      if (!window.QRCode) { tiles[i].remove(); continue; }
+      new QRCode(tiles[i], {
+        text: tiles[i].getAttribute('data-qr'), width: 96, height: 96,
+        colorDark: '#111113', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M
+      });
+    }
+  })();
+
+  // Live star count, when GitHub answers. Otherwise the pill just says what it does.
+  (function () {
+    var label = document.getElementById('stars');
+    if (!window.fetch) return;
+    fetch('https://api.github.com/repos/behkha/lidbend', { headers: { Accept: 'application/vnd.github+json' } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (repo) {
+        if (!repo || typeof repo.stargazers_count !== 'number') return;
+        label.textContent = repo.stargazers_count.toLocaleString() + (repo.stargazers_count === 1 ? ' star' : ' stars');
+      })
+      .catch(function () {});
+  })();
+</script>
+</body>
+</html>
